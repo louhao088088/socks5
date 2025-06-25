@@ -1,8 +1,13 @@
 # Simple Proxy Server
 
-## Task Requirements
+This is a simple proxy server using the SOCKS5 protocol.
 
-Implement a simple proxy server using the SOCKS5 protocol. You only need to support the `CMD CONNECT` (to establish a TCP connection). Authentication is not required (for `AUTH`, only supporting method `0` is necessary).
+Only  support the `CMD CONNECT` (to establish a TCP connection). Authentication is not required (for `AUTH`, only supporting method `0` is necessary).
+
+## Structure
+
+There are two code which has completed the function,which is socks.go and main.go. There are can
+ be standalone
 
 ## Local Testing
 
@@ -18,10 +23,9 @@ all_proxy=socks5h://localhost:8080 curl example.com
 
 The evaluation script will be released later this week.
 
-## Deadline
-
-Tentatively due before Monday of the second week.
 
 ## Reference Material
 
 [RFC 1928: SOCKS Protocol Version 5](https://www.rfc-editor.org/rfc/rfc1928)
+
+
