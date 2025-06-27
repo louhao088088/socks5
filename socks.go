@@ -6,11 +6,15 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"socks5/server"
 )
 
 func main() {
 	addr := "[::]:8080"
 	log.Printf("SOCKS5 proxy listening on %s...\n", addr)
+
+	server.StartCleanupTask()
+
 	if err := Start(addr); err != nil {
 		log.Fatalf("Failed to start proxy: %v", err)
 	}
@@ -79,8 +83,9 @@ func processRequest(conn net.Conn) error {
 	}
 
 	VER, CMD, RSV, TYPE := buf[0], buf[1], buf[2], buf[3]
-	if VER != 5 || CMD != 1 || RSV != 0 {
-		conn.Write([]byte{0x05, 0x07, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00})
+	if VER != 5 || RSV != 0 {
+		server.SendFailureResponse(conn, 0x07) // 命令不支持
+		log.Printf("Invalid SOCKS5 request: VER=%d, CMD=%d, RSV=%d, TYPE=%d", VER, CMD, RSV, TYPE)
 		return io.ErrUnexpectedEOF
 	}
 
@@ -128,21 +133,15 @@ func processRequest(conn net.Conn) error {
 		return io.ErrUnexpectedEOF
 	}
 
-	log.Println("CONNECT to", dstAddr)
-	remote, err := net.Dial("tcp", dstAddr)
-	if err != nil {
-		conn.Write([]byte{0x05, 0x00, 0x05, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-		return err
+	switch CMD {
+	case 1: // CONNECT
+		return server.HandleConnect(conn, dstAddr)
+	case 3: // UDP ASSOCIATE  
+		return server.HandleUDPAssociate(conn, dstAddr)
+	default:
+		server.SendFailureResponse(conn, 0x07) // 命令不支持
+		return io.ErrUnexpectedEOF
 	}
-	conn.Write([]byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-
-	defer remote.Close()
-
-	go io.Copy(conn, remote)
-	go io.Copy(remote, conn)
-
-	select {}
-
 	return nil
 }
 

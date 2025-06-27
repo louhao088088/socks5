@@ -15,3 +15,10 @@ socks5
 vendor/
 *.test
 *.prof
+
+*.go
+!socks.go
+!tcp.go
+!udp.go
+*.py
+*.sh
